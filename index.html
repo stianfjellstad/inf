@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="nb"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Rute til Garmin</title>
+<style>
+:root{color-scheme:light dark}
+body{font:16px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif;margin:0;padding:24px 16px;max-width:520px;margin-inline:auto}
+h1{font-size:22px;margin:0 0 4px}
+p{margin:8px 0}
+.tall{color:#666;font-size:14px}
+button,a.knapp{display:block;width:100%;box-sizing:border-box;font:inherit;font-weight:600;padding:14px 16px;margin:12px 0;border-radius:8px;border:1px solid #1b1b1b;background:#1b1b1b;color:#fff;text-align:center;text-decoration:none;cursor:pointer}
+button.lys,a.lys{background:transparent;color:inherit}
+ol{padding-left:20px;font-size:14px;color:#555}
+.feil{color:#b3261e}
+@media (prefers-color-scheme:dark){ .tall,ol{color:#aaa} button,a.knapp{border-color:#eee;background:#eee;color:#111} }
+</style></head><body>
+<h1 id="navn">Rute til Garmin</h1>
+<p class="tall" id="tall"></p>
+<button id="del" hidden>Send til Garmin Connect</button>
+<a class="knapp lys" id="ned" hidden>Last ned GPX</a>
+<p class="feil" id="feil" hidden></p>
+<ol id="hjelp" hidden>
+<li><b>Telefon:</b> trykk «Send til Garmin Connect» og velg Connect i delingsmenyen. Finnes ikke Connect der, trykk «Last ned GPX», åpne filen og velg «Åpne i Connect».</li>
+<li>Connect viser ruten som en ny løype. Lagre den og velg «Send til enhet».</li>
+<li><b>PC:</b> last ned filen og importer den i Garmin Connect under Trening og planlegging › Løyper › Importer.</li>
+</ol>
+<p class="tall">Ruten ligger i lenken du åpnet (etter #) og behandles bare i nettleseren din. Ingenting sendes til en tjener.</p>
+<script>
+"use strict";
+/* Lenkeformat: #v1/<navn, URL-kodet>/<posisjoner>/<hoeyder>
+   posisjoner: Googles polyline-koding med 5 desimaler (bredde, lengde); hoeyder: samme koding av ett heltall per punkt (meter). */
+function dekod(s, per){ const ut = []; let i = 0; const forr = new Array(per).fill(0);
+  while(i < s.length){ const p = []; for(let k = 0; k < per; k++){ let res = 0, shift = 0, b; do { b = s.charCodeAt(i++) - 63; res |= (b & 31) << shift; shift += 5; } while(b >= 32 && i <= s.length); forr[k] += (res & 1) ? ~(res >> 1) : (res >> 1); p.push(forr[k]); } ut.push(p); }
+  return ut; }
+const esc = s => String(s).replace(/[<&>"]/g, c=>({"<":"&lt;","&":"&amp;",">":"&gt;",'"':"&quot;"}[c]));
+function lagGpx(navn, pos, hoy){
+  let t = '<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="Treningsdashbord" xmlns="http://www.topografix.com/GPX/1/1">\n<metadata><name>' + esc(navn) + '</name></metadata>\n<trk><name>' + esc(navn) + '</name><trkseg>\n';
+  pos.forEach((p, i)=>{ t += '<trkpt lat="' + (p[0]/1e5).toFixed(5) + '" lon="' + (p[1]/1e5).toFixed(5) + '">' + (hoy && hoy[i] ? '<ele>' + hoy[i][0] + '</ele>' : '') + '</trkpt>\n'; });
+  return t + '</trkseg></trk>\n</gpx>\n'; }
+(function(){
+  const feil = m => { const e = document.getElementById("feil"); e.textContent = m; e.hidden = false; };
+  const d = location.hash.slice(1).split("/");
+  if(d[0] !== "v1" || d.length < 3){ feil("Lenken inneholder ingen rute. Åpne siden fra «Send til Garmin» i ruteplanleggeren."); return; }
+  let navn, pos, hoy = null;
+  try { navn = decodeURIComponent(d[1]) || "Rute"; pos = dekod(decodeURIComponent(d[2]), 2); if(d[3]) hoy = dekod(decodeURIComponent(d[3]), 1); } catch(e){ feil("Kunne ikke lese ruten i lenken (den kan være kuttet)."); return; }
+  if(pos.length < 2 || pos.some(p=>Math.abs(p[0]) > 9e6 || Math.abs(p[1]) > 18e6)){ feil("Ruten i lenken er ufullstendig."); return; }
+  if(hoy && hoy.length !== pos.length) hoy = null;
+  let km = 0; for(let i = 1; i < pos.length; i++){ const a = pos[i-1], b = pos[i], f = Math.PI/180, x = (b[1] - a[1])/1e5*f*Math.cos((a[0] + b[0])/2e5*f), y = (b[0] - a[0])/1e5*f; km += Math.hypot(x, y)*6371; }
+  let hm = 0; if(hoy) for(let i = 1; i < hoy.length; i++) hm += Math.max(0, hoy[i][0] - hoy[i-1][0]);
+  document.getElementById("navn").textContent = navn; document.title = navn + " – rute til Garmin";
+  document.getElementById("tall").textContent = km.toFixed(1).replace(".", ",") + " km" + (hoy ? " · " + Math.round(hm) + " høydemeter" : "") + " · " + pos.length + " punkter";
+  const filnavn = (navn.normalize("NFKD").replace(/[^\w\- ]+/g, "").trim().replace(/\s+/g, "-") || "rute") + ".gpx";
+  const tekst = lagGpx(navn, pos, hoy), fil = new File([tekst], filnavn, {type:"application/gpx+xml"});
+  const ned = document.getElementById("ned"); ned.href = URL.createObjectURL(fil); ned.download = filnavn; ned.hidden = false;
+  const del = document.getElementById("del");
+  if(navigator.canShare && navigator.canShare({files:[fil]})){ del.hidden = false;
+    del.addEventListener("click", async ()=>{ try { await navigator.share({files:[fil], title:navn}); } catch(e){ if(e && e.name !== "AbortError") feil("Deling virket ikke her. Bruk «Last ned GPX»."); } }); }
+  else ned.classList.remove("lys");
+  document.getElementById("hjelp").hidden = false;
+})();
+</script>
+</body></html>
