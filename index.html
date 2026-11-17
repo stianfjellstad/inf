@@ -20,11 +20,12 @@ ol{padding-left:20px;font-size:14px;color:#555}
 <a class="knapp" id="ned" hidden>Last ned GPX</a>
 <button id="del" class="lys" hidden>Del GPX-filen</button>
 <p class="feil" id="feil" hidden></p>
-<a class="knapp lys" id="web" href="https://connect.garmin.com/modern/courses" target="_blank" rel="noopener" hidden>Åpne løyper i Garmin Connect (web)</a>
+<a class="knapp lys" id="web" href="https://connect.garmin.com/modern/courses" target="_blank" rel="noopener" hidden>Åpne Garmin Connect for import</a>
+<p class="tall" id="web-hjelp" hidden>Garmin tar ikke imot en rute fra en lenke, så den nye løypen ligger ikke der før du har importert filen: <b>1</b> trykk «Last ned GPX» over, <b>2</b> åpne Garmin Connect, <b>3</b> trykk <b>Importer</b> i løypelisten (Trening og planlegging › Løyper) og velg filen du lastet ned.</p>
 <ol id="hjelp" hidden>
 <li><b>iPhone:</b> trykk «Last ned GPX» og lagre i Filer. Åpne Filer, trykk på filen, så delingsknappen (firkant med pil), og velg <b>Connect</b>. Velg type løype og lagre. Delingsmenyen rett fra nettleseren viser ofte ikke Connect, men delingen fra Filer gjør det.</li>
 <li><b>Android:</b> trykk «Last ned GPX», åpne filen i Filer (Files by Google) og velg «Åpne med» › <b>Garmin Connect</b>.</li>
-<li><b>Hvis Connect ikke står i listen:</b> trykk «Åpne løyper i Garmin Connect (web)», logg inn, velg <b>Importer</b> nederst i løypelisten og velg filen du lastet ned. Det virker også i nettleseren på telefonen.</li>
+<li><b>Hvis Connect ikke står i listen:</b> trykk «Åpne Garmin Connect for import», logg inn, trykk <b>Importer</b> i løypelisten og velg filen du lastet ned. Siden viser bare løypene du har fra før til du har importert. Det virker også i nettleseren på telefonen.</li>
 <li>Lagre løypen og velg «Send til enhet».</li>
 </ol>
 <p class="tall">Ruten ligger i lenken du åpnet (etter #) og behandles bare i nettleseren din. Ingenting sendes til en tjener.</p>
@@ -64,7 +65,7 @@ function lagGpx(navn, pos, hoy, wp){
   const del = document.getElementById("del");
   if(navigator.canShare && navigator.canShare({files:[fil]})){ del.hidden = false;
     del.addEventListener("click", async ()=>{ try { await navigator.share({files:[fil], title:navn}); } catch(e){ if(e && e.name !== "AbortError") feil("Deling virket ikke her. Bruk «Last ned GPX»."); } }); }
-  document.getElementById("hjelp").hidden = false; document.getElementById("web").hidden = false;
+  document.getElementById("hjelp").hidden = false; document.getElementById("web").hidden = false; document.getElementById("web-hjelp").hidden = false;
 })();
 </script>
 </body></html>
