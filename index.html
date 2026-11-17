@@ -11,17 +11,20 @@ button,a.knapp{display:block;width:100%;box-sizing:border-box;font:inherit;font-
 button.lys,a.lys{background:transparent;color:inherit}
 ol{padding-left:20px;font-size:14px;color:#555}
 .feil{color:#b3261e}
+[hidden]{display:none!important}
 @media (prefers-color-scheme:dark){ .tall,ol{color:#aaa} button,a.knapp{border-color:#eee;background:#eee;color:#111} }
 </style></head><body>
 <h1 id="navn">Rute til Garmin</h1>
 <p class="tall" id="tall"></p>
-<button id="del" hidden>Send til Garmin Connect</button>
-<a class="knapp lys" id="ned" hidden>Last ned GPX</a>
+<a class="knapp" id="ned" hidden>Last ned GPX</a>
+<button id="del" class="lys" hidden>Del GPX-filen</button>
 <p class="feil" id="feil" hidden></p>
+<a class="knapp lys" id="web" href="https://connect.garmin.com/modern/courses" target="_blank" rel="noopener" hidden>Åpne løyper i Garmin Connect (web)</a>
 <ol id="hjelp" hidden>
-<li><b>Telefon:</b> trykk «Send til Garmin Connect» og velg Connect i delingsmenyen. Finnes ikke Connect der, trykk «Last ned GPX», åpne filen og velg «Åpne i Connect».</li>
-<li>Connect viser ruten som en ny løype. Lagre den og velg «Send til enhet».</li>
-<li><b>PC:</b> last ned filen og importer den i Garmin Connect under Trening og planlegging › Løyper › Importer.</li>
+<li><b>iPhone:</b> trykk «Last ned GPX» og lagre i Filer. Åpne Filer, trykk på filen, så delingsknappen (firkant med pil), og velg <b>Connect</b>. Velg type løype og lagre. Delingsmenyen rett fra nettleseren viser ofte ikke Connect, men delingen fra Filer gjør det.</li>
+<li><b>Android:</b> trykk «Last ned GPX», åpne filen i Filer (Files by Google) og velg «Åpne med» › <b>Garmin Connect</b>.</li>
+<li><b>Hvis Connect ikke står i listen:</b> trykk «Åpne løyper i Garmin Connect (web)», logg inn, velg <b>Importer</b> nederst i løypelisten og velg filen du lastet ned. Det virker også i nettleseren på telefonen.</li>
+<li>Lagre løypen og velg «Send til enhet».</li>
 </ol>
 <p class="tall">Ruten ligger i lenken du åpnet (etter #) og behandles bare i nettleseren din. Ingenting sendes til en tjener.</p>
 <script>
@@ -54,8 +57,7 @@ function lagGpx(navn, pos, hoy){
   const del = document.getElementById("del");
   if(navigator.canShare && navigator.canShare({files:[fil]})){ del.hidden = false;
     del.addEventListener("click", async ()=>{ try { await navigator.share({files:[fil], title:navn}); } catch(e){ if(e && e.name !== "AbortError") feil("Deling virket ikke her. Bruk «Last ned GPX»."); } }); }
-  else ned.classList.remove("lys");
-  document.getElementById("hjelp").hidden = false;
+  document.getElementById("hjelp").hidden = false; document.getElementById("web").hidden = false;
 })();
 </script>
 </body></html>
